@@ -1,0 +1,8 @@
+// open Subscriber 
+mosquitto_sub -h localhost -t icu/patient1  
+
+// Run sender file
+python sender.py
+
+// open publisher
+mosquitto_pub -h localhost -t icu/patient1 -m "HeartRate:82 Temp:36.7"
