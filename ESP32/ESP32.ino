@@ -34,7 +34,7 @@ const char* password = "Team3@123";
 #define INFLUXDB_BUCKET "iot-body-monitor"
  
 // Token
-#define INFLUXDB_TOKEN "JSsROqrguG6lfYdP88KNzDbBm65cIO1mUhuZKAg7RUlSLYerXkDyAyXj9r8uGuGtjDFlBhJdqjFhf8ozAHE4vg=="
+// #define INFLUXDB_TOKEN "JSsROqrguG6lfYdP88KNzDbBm65cIO1mUhuZKAg7RUlSLYerXkDyAyXj9r8uGuGtjDFlBhJdqjFhf8ozAHE4vg=="
  
 // =====================================
 // Influx Client
