@@ -1,0 +1,178 @@
+[
+    {
+        "id": "097a0f98b4084fcd",
+        "type": "tab",
+        "label": "ICU Room Alert Flow",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "ced08568bcf88917",
+        "type": "http in",
+        "z": "097a0f98b4084fcd",
+        "name": "Rasp-HTTP In",
+        "url": "/iot-data",
+        "method": "post",
+        "upload": false,
+        "skipBodyParsing": false,
+        "swaggerDoc": "",
+        "x": 90,
+        "y": 180,
+        "wires": [
+            [
+                "9334eb0d8abc4b14"
+            ]
+        ]
+    },
+    {
+        "id": "9334eb0d8abc4b14",
+        "type": "json",
+        "z": "097a0f98b4084fcd",
+        "name": "Json",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 290,
+        "y": 180,
+        "wires": [
+            [
+                "226fb04ba9e36d4a"
+            ]
+        ]
+    },
+    {
+        "id": "226fb04ba9e36d4a",
+        "type": "function",
+        "z": "097a0f98b4084fcd",
+        "name": "Patient_Data_Function",
+        "func": "let data = flow.get(\"icuData\") || {};\nlet now = Date.now();\n\n// ESP8266\n\nif(msg.payload.heart_rate !== undefined)\n{\n    data.bpm = Number(msg.payload.heart_rate);\n    data.bpmTime = now;\n}\n\nif(msg.payload.body_temperature !== undefined)\n{\n    data.temp = Number(msg.payload.body_temperature);\n    data.tempTime = now;\n}\n\nif(msg.payload.spo2 !== undefined)\n{\n    data.spo2 = Number(msg.payload.spo2);\n    data.spo2Time = now;\n}\n\n// Raspberry Pi\n\nif(msg.payload.room_temperature !== undefined)\n{\n    data.roomTemp = Number(msg.payload.room_temperature);\n    data.roomTempTime = now;\n}\n\nif(msg.payload.room_humidity !== undefined)\n{\n    data.humidity = Number(msg.payload.room_humidity);\n    data.humidityTime = now;\n}\n\nif(msg.payload.room_pressure !== undefined)\n{\n    data.pressure = Number(msg.payload.room_pressure);\n    data.pressureTime = now;\n}\n\nflow.set(\"icuData\", data);\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 160,
+        "wires": [
+            [
+                "6de79f345ccc246d",
+                "c51d2e76f766e31c"
+            ]
+        ]
+    },
+    {
+        "id": "6de79f345ccc246d",
+        "type": "function",
+        "z": "097a0f98b4084fcd",
+        "name": "Check_Critical_Situation",
+        "func": "let data = flow.get(\"icuData\") || {};\n\nlet now = Date.now();\n\nconst SENSOR_TIMEOUT = 15000;\n\n// =====================================\n// REMOVE OLD VALUES\n// =====================================\n\nif (data.bpmTime && (now - data.bpmTime) > SENSOR_TIMEOUT) {\n    delete data.bpm;\n}\n\nif (data.tempTime && (now - data.tempTime) > SENSOR_TIMEOUT) {\n    delete data.temp;\n}\n\nif (data.spo2Time && (now - data.spo2Time) > SENSOR_TIMEOUT) {\n    delete data.spo2;\n}\n\nif (data.roomTempTime && (now - data.roomTempTime) > SENSOR_TIMEOUT) {\n    delete data.roomTemp;\n}\n\nif (data.humidityTime && (now - data.humidityTime) > SENSOR_TIMEOUT) {\n    delete data.humidity;\n}\n\nif (data.pressureTime && (now - data.pressureTime) > SENSOR_TIMEOUT) {\n    delete data.pressure;\n}\n\nflow.set(\"icuData\", data);\n\n// =====================================\n// ALERT COOLDOWN\n// =====================================\n\nlet lastAlertTime =\n    flow.get(\"lastAlertTime\") || 0;\n\nif ((now - lastAlertTime) < 30000) {\n    return null;\n}\n\nlet alerts = [];\n\n// BPM\n\nif (data.bpm !== undefined) {\n    if (data.bpm > 80) {\n        alerts.push(\"High Heart Rate\");\n    }\n\n    if (data.bpm > 0 && data.bpm < 50) {\n        alerts.push(\"Low Heart Rate\");\n    }\n}\n\n// Body Temp\n\nif (data.temp !== undefined) {\n    if (data.temp > 30) {\n        alerts.push(\"High Body Temperature\");\n    }\n}\n\n// SpO2\n\nif (data.spo2 !== undefined) {\n    if (data.spo2 > 0 && data.spo2 < 90) {\n        alerts.push(\"Low SpO₂\");\n    }\n}\n\n// Room Temp\n\nif (data.roomTemp !== undefined) {\n    if (data.roomTemp > 35) {\n        alerts.push(\"High Room Temperature\");\n    }\n}\n\n// Humidity\n\nif (data.humidity !== undefined) {\n    if (data.humidity > 80) {\n        alerts.push(\"High Humidity\");\n    }\n}\n\n// Pressure\n\nif (data.pressure !== undefined) {\n    if (data.pressure < 950) {\n        alerts.push(\"Low Pressure\");\n    }\n\n    if (data.pressure > 1050) {\n        alerts.push(\"High Pressure\");\n    }\n}\n\nif (alerts.length === 0) {\n    return null;\n}\n\nflow.set(\"lastAlertTime\", now);\n\nmsg.alerts = alerts;\nmsg.data = data;\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 750,
+        "y": 160,
+        "wires": [
+            [
+                "222322061e1be6ca"
+            ]
+        ]
+    },
+    {
+        "id": "222322061e1be6ca",
+        "type": "function",
+        "z": "097a0f98b4084fcd",
+        "name": "Telegram_Function",
+        "func": "let d = msg.data;\n\nlet message = \"🚨 ICU ALERT 🚨\\n\\n\";\n\nmessage += \"Critical Conditions:\\n\";\n\nfor (let i = 0; i < msg.alerts.length; i++) {\n    message += \"• \" + msg.alerts[i] + \"\\n\";\n}\n\nmessage += \"\\n-----------------\\n\";\nmessage += \"Current Status\\n\";\nmessage += \"-----------------\\n\\n\";\n\n// Heart Rate\n\nif (d.bpm !== undefined) {\n    let status =\n        (d.bpm > 80 || d.bpm < 50)\n            ? \"🔴 Critical\"\n            : \"🟢 Normal\";\n\n    message +=\n        \"❤️ BPM: \" +\n        d.bpm +\n        \" (\" +\n        status +\n        \")\\n\";\n}\n\n// Body Temp\n\nif (d.temp !== undefined) {\n    let status =\n        d.temp > 30\n            ? \"🔴 Critical\"\n            : \"🟢 Normal\";\n\n    message +=\n        \"🌡️ Body Temp: \" +\n        d.temp +\n        \"°C (\" +\n        status +\n        \")\\n\";\n}\n\n// SpO2\n\nif (d.spo2 !== undefined) {\n    let status =\n        d.spo2 < 90\n            ? \"🔴 Critical\"\n            : \"🟢 Normal\";\n\n    message +=\n        \"🫁 SpO₂: \" +\n        d.spo2 +\n        \"% (\" +\n        status +\n        \")\\n\";\n}\n\n// Room Temp\n\nif (d.roomTemp !== undefined) {\n    let status =\n        d.roomTemp > 30\n            ? \"🔴 Critical\"\n            : \"🟢 Normal\";\n\n    message +=\n        \"🏥 Room Temp: \" +\n        d.roomTemp +\n        \"°C (\" +\n        status +\n        \")\\n\";\n}\n\n// Humidity\n\nif (d.humidity !== undefined) {\n    let status =\n        d.humidity > 80\n            ? \"🔴 Critical\"\n            : \"🟢 Normal\";\n\n    message +=\n        \"💧 Humidity: \" +\n        d.humidity +\n        \"% (\" +\n        status +\n        \")\\n\";\n}\n\n// Pressure\n\nif (d.pressure !== undefined) {\n    let status =\n        (d.pressure < 950 || d.pressure > 1050)\n            ? \"🔴 Critical\"\n            : \"🟢 Normal\";\n\n    message +=\n        \"📈 Pressure: \" +\n        d.pressure +\n        \" hPa (\" +\n        status +\n        \")\\n\";\n}\n\nmsg.payload =\n{\n    chatId: 1334634124,\n    type: \"message\",\n    content: message\n};\n\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 930,
+        "y": 240,
+        "wires": [
+            [
+                "c9430892edce7655"
+            ]
+        ]
+    },
+    {
+        "id": "c9430892edce7655",
+        "type": "telegram sender",
+        "z": "097a0f98b4084fcd",
+        "name": "Telegram Message Alert",
+        "bot": "843f60201914a891",
+        "haserroroutput": false,
+        "outputs": 1,
+        "x": 1010,
+        "y": 400,
+        "wires": [
+            [
+                "0c1d16e37831893d"
+            ]
+        ]
+    },
+    {
+        "id": "c51d2e76f766e31c",
+        "type": "http response",
+        "z": "097a0f98b4084fcd",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 680,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "0c1d16e37831893d",
+        "type": "http response",
+        "z": "097a0f98b4084fcd",
+        "name": "HTTP Response",
+        "statusCode": "",
+        "headers": {},
+        "x": 1100,
+        "y": 500,
+        "wires": []
+    },
+    {
+        "id": "843f60201914a891",
+        "type": "telegram bot",
+        "botname": "ICU Room Alert",
+        "usernames": "",
+        "chatids": "",
+        "baseapiurl": "",
+        "testenvironment": false,
+        "updatemode": "polling",
+        "pollinterval": 300,
+        "usesocks": false,
+        "sockshost": "",
+        "socksprotocol": "socks5",
+        "socksport": 6667,
+        "socksusername": "anonymous",
+        "sockspassword": "",
+        "bothost": "",
+        "botpath": "",
+        "localbothost": "0.0.0.0",
+        "localbotport": 8443,
+        "publicbotport": 8443,
+        "privatekey": "",
+        "certificate": "",
+        "useselfsignedcertificate": false,
+        "sslterminated": false,
+        "verboselogging": false
+    },
+    {
+        "id": "aa3f924a28faa421",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "node-red-contrib-telegrambot": "17.4.12"
+        }
+    }
+]
