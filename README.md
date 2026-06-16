@@ -373,6 +373,40 @@ IOT-Project-Team-3
 The team adopted a software-first development strategy using simulated sensor data to continue development before hardware arrival.
 
 ---
+## Project Images
+
+### ESP8266 Development Board
+![ESP8266 Board](Images/ESP8266_Board.jpg.jpeg)
+
+### Raspberry Pi with Sense HAT
+![Raspberry Pi Sense HAT](Images/RaspberryPi_SenseHAT.jpg.jpeg)
+
+### MAX30102 Heart Rate Sensor
+![MAX30102 Sensor](Images/MAX30102%20Heart%20Rate%20Sensor.jpg)
+
+### DS18B20 Temperature Sensor
+![DS18B20 Sensor](Images/DS18B20%20Temperature%20Sensor.jpg)
+
+### Circuit Design
+![Circuit Design](Images/Circuit%20Design.jpg)
+
+### IoT Architecture
+![IoT Architecture](Images/IoT_Architecture.png.jpg)
+
+### Planning Poker Session
+![Planning Poker](Images/Planning_Poker.png.png)
+
+### Jira Scrum Board
+![Jira Scrum Board](Images/Jira_Scrum_Board.png.png)
+
+### Node-RED Alert Flow
+![Node-RED Flow](Images/NodeRED_Flow.png.png)
+
+### Grafana Dashboard
+![Grafana Dashboard](Images/Grafana.jpeg)
+
+### InfluxDB Dashboard
+![InfluxDB Dashboard](Images/InfluxDB.png)
 
 ## Future Improvements
 
